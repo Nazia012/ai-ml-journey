@@ -1,0 +1,92 @@
+Here are clean, timestamp-free revision notes for **"Working with JSON/SQL | Day 16"** by CampusX ([Watch on YouTube](http://www.youtube.com/watch?v=fFwRC-fapIU)):
+
+---
+
+### **Part 1: Working with JSON**
+
+* **What is JSON?**
+* Stands for **JavaScript Object Notation**.
+* A universal, language-independent data format (key-value pairs) understood by Python, Java, JavaScript, etc.
+* Most APIs return data in JSON format, making it essential for real-world data gathering.
+
+
+* **Loading JSON into Pandas (`pd.read_json()`)**
+* **From a Local File:**
+```python
+import pandas as pd
+df = pd.read_json('train.json')
+
+```
+
+
+* **Directly from a Remote URL / API Endpoint:**
+```python
+df = pd.read_json('https://api.exchangerate-api.com/v4/latest/INR')
+
+```
+
+
+* **Useful Parameters in `pd.read_json()`:**
+* `dtype`: Override column data types during load.
+* `convert_dates`: Parse date columns into `datetime` format.
+* `encoding`: Specify character encoding (e.g., `'utf-8'`, `'latin-1'`).
+* `chunksize` & `nrows`: Load massive JSON files in chunks or limit the number of rows imported to save RAM.
+
+
+
+
+
+---
+
+### **Part 2: Working with SQL**
+
+* **Why SQL Matters:**
+* Structured Query Language (SQL) is used to extract data directly from relational databases (MySQL, PostgreSQL, SQLite) into Pandas DataFrames.
+
+
+* **Step-by-Step Workflow (Loading a `.sql` Dump via MySQL & Python)**
+1. **Set Up a Local Database Server (XAMPP)**
+* Install and open **XAMPP Control Panel**, then start **Apache** and **MySQL**.
+* Open `localhost/phpmyadmin` in your browser, create a new database (e.g., `world`), and import the `.sql` file to generate the tables.
+
+
+2. **Install the Python-MySQL Bridge Library**
+* Install `mysql-connector-python` so Python can communicate with the MySQL server:
+```bash
+pip install mysql-connector-python
+
+```
+
+
+
+
+3. **Establish a Database Connection in Python**
+```python
+import mysql.connector
+
+conn = mysql.connector.connect(
+    host='localhost',      # Use server IP if connecting to a remote DB (e.g., AWS)
+    user='root',           # Default XAMPP username
+    password='',           # Default XAMPP password is empty
+    database='world'       # Name of your target database
+)
+
+```
+
+
+4. **Query Data Directly into a DataFrame (`pd.read_sql_query()`)**
+* Pass any valid SQL query string along with the connection object:
+```python
+# Fetch an entire table
+df = pd.read_sql_query("SELECT * FROM city", conn)
+
+# Filter data directly at the database level using SQL
+df_india = pd.read_sql_query("SELECT * FROM city WHERE CountryCode LIKE 'IND'", conn)
+
+```
+
+
+* **Useful Parameters in `pd.read_sql_query()`:**
+* `index_col`: Set a specific column as the DataFrame index.
+* `parse_dates`: Convert date columns into `datetime64` format on load.
+* `chunksize`: Read large SQL query results in memory-safe batches.
