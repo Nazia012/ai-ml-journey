@@ -1,0 +1,117 @@
+* **Primary Tool:** `pd.read_csv()` in Pandas is the go-to function for loading CSV files. Mastering its parameters solves most real-world data ingestion issues upfront.
+
+### **Loading CSV Files**
+
+* **From a Local Machine:** Pass the file name or relative file path directly:
+```python
+df = pd.read_csv('file.csv')
+
+```
+
+* **From a Remote URL / Server:** When `pd.read_csv(url)` is blocked or needs request headers, fetch the raw text via the `requests` library and wrap it in `io.StringIO`—this is useful when the server requires a browser-like `User-Agent` header:
+```python
+import requests
+from io import StringIO
+
+url = "https://raw.githubusercontent.com/cs109/2014_data/master/countries.csv"
+headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0) Gecko/20100101 Firefox/66.0"}
+
+req = requests.get(url, headers=headers)
+data = StringIO(req.text)
+df = pd.read_csv(data)
+
+```
+
+### **Key `pd.read_csv()` Parameters for Revision**
+
+1. **`sep` (Custom Delimiters)**
+* Default is `','`. Override it when working with other delimited files—for example, `sep='\t'` for Tab-Separated Values (`.tsv`) or `sep=';'` for semicolon-separated data.
+
+
+2. **`names` (Missing Column Headers)**
+* If a file has no header row (causing Pandas to treat the first data row as column names), pass a custom list of column names:
+```python
+pd.read_csv('file.tsv', sep='\t', names=['sno', 'name', 'release_year', 'rating'])
+
+```
+
+3. **`header` (Misplaced Column Headers)**
+* When the actual column names sit on a row below index `0` (e.g., an extra index row sits at the top), specify which row contains the headers: `header=1`.
+
+
+4. **`index_col` (Setting a Custom Index)**
+* Replace Pandas' default auto-generated `0, 1, 2...` index with an existing unique identifier column from the dataset: `index_col='enrollee_id'`.
+
+
+5. **`usecols` (Importing Specific Columns)**
+* Load only the columns you need instead of the entire dataset to save memory and keep data clean:
+```python
+pd.read_csv('file.csv', usecols=['enrollee_id', 'gender', 'education_level'])
+
+```
+
+
+6. **`squeeze` (Single Column as Series)**
+* When importing a single column via `usecols`, setting `squeeze=True` returns a 1D Pandas **Series** instead of a 2D **DataFrame** *(Note: deprecated in newer Pandas versions in favor of `.squeeze("columns")`)*.
+
+
+7. **`skiprows` & `nrows` (Controlling Rows)**
+* **`skiprows`:** Skip specific row indices (e.g., `skiprows=[0, 2]`) or pass a callable function (e.g., `lambda x: x % 5 == 0`) to skip rows based on custom logic.
+* **`nrows`:** Import only the first *N* rows (e.g., `nrows=100`), useful for previewing massive files without exhausting RAM.
+
+
+8. **`encoding` (Character Encoding Issues)**
+* Default is `'utf-8'`. If loading throws a `UnicodeDecodeError` (common with emoji datasets or non-English text), specify the file's actual encoding—such as `encoding='latin-1'`—or re-save the file as UTF-8 in a code editor or using terminal.
+
+
+9. **`error_bad_lines` / `on_bad_lines` (Corrupted Rows)**
+* When a few rows contain extra values/delimiters that trigger a `ParserError`, skip malformed lines instead of crashing: `on_bad_lines='skip'` *(formerly `error_bad_lines=False`)*.
+
+
+10. **`dtypes` (Overriding Data Types)**
+* Pass a dictionary to cast columns into more memory-efficient types during load (e.g., converting a `0.0`/`1.0` float column into integers):
+```python
+pd.read_csv('file.csv', dtype={'target': int})
+
+```
+
+
+11. **`parse_dates` (Handling Date Columns)**
+* By default, dates load as plain strings (`object`). Pass date column names in a list so Pandas parses them as `datetime64` objects—allowing date filtering, sorting, and extraction of year/month/day:
+```python
+pd.read_csv('matches.csv', parse_dates=['date'])
+
+```
+
+
+* Can also combine separate year, month, and day columns into a single date column using nested lists or a dictionary.
+
+
+12. **`converters` (Custom Transformations on Load)**
+* Apply a custom Python function to transform values inside specific columns as the file is read (e.g., shortening full team names to abbreviations):
+```python
+pd.read_csv('matches.csv', converters={'team1': rename_func})
+
+```
+
+
+
+
+13. **`na_values` (Custom Missing Value Placeholders)**
+* Datasets often represent missing values with placeholders like `'-'`, `'?'`, or `'N/A'` instead of blank cells. Pass a list of these strings so Pandas automatically recognizes them as `NaN`:
+```python
+pd.read_csv('file.csv', na_values=['-', '?'])
+
+```
+
+
+
+
+14. **`chunksize` (Processing Massive Datasets in Batches)**
+* When a dataset is too large to fit into RAM all at once, split it into smaller DataFrame chunks and process them iteratively inside a loop:
+```python
+dfs = pd.read_csv('large_file.csv', chunksize=5000)
+for chunk in dfs:
+    print(chunk.shape)
+
+```
